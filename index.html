@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Foxhole — калькулятор логистической квоты</title>
+  <title>Foxhole — калькулятор логистической квоты v26</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -32,7 +32,7 @@
     .wrap {
       max-width: 1320px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 14px 24px 24px;
     }
 
     header {
@@ -40,11 +40,11 @@
       gap: 16px;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     h1 {
-      margin: 0 0 6px;
+      margin: 0 0 4px;
       font-size: clamp(24px, 4vw, 38px);
       letter-spacing: -.03em;
     }
@@ -84,7 +84,7 @@
       align-items: center;
       gap: 6px;
       width: fit-content;
-      margin-top: 10px;
+      margin-top: 8px;
       padding: 7px 10px;
       border-radius: 999px;
       background: rgba(34, 197, 94, .12);
@@ -160,6 +160,19 @@
       font-weight: 800;
     }
 
+    .main-toolbar .meta-info .file-name {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: bottom;
+      white-space: nowrap;
+    }
+
+    .main-toolbar .version-line {
+      color: #93c5fd;
+    }
+
     body { padding-bottom: 112px; }
 
     /* На широком экране освобождаем справа место и переносим панель туда,
@@ -177,7 +190,7 @@
       }
 
       .main-toolbar {
-        top: 92px;
+        top: 14px;
         right: 20px;
         left: auto;
         bottom: auto;
@@ -463,6 +476,8 @@
         <button class="good" id="saveBtn" title="Сохранить в браузере, Ctrl+S">💾 Сохранить</button>
         <button id="saveAsBtn" title="Выбрать место сохранения JSON-файла. В Chrome/Edge можно заменить существующий файл">💾 Сохранить как...</button>
         <span class="save-status" id="saveStatus">—</span>
+        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v26</strong></span>
+        <span class="meta-info">Файл квоты: <strong class="file-name" id="quotaFileName">автосохранение браузера</strong></span>
         <span class="meta-info">Изменено: <strong id="modifiedAt">—</strong></span>
         <button class="good" id="copyReportBtn">Скопировать отчёт</button>
         <button id="exportBtn">Экспорт JSON</button>
@@ -701,8 +716,9 @@
   <input id="importFile" class="hidden" type="file" accept="application/json" />
 
   <script>
-    const STORAGE_KEY = 'foxhole-logistics-quota-v25';
-    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
+    const PROGRAM_VERSION = 'v26';
+    const STORAGE_KEY = 'foxhole-logistics-quota-v26';
+    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
 
     const defaultState = {
       useQuotaRecipes: true,
@@ -711,6 +727,7 @@
       meta: {
         updatedAt: '',
         savedAsName: '',
+        programVersion: PROGRAM_VERSION,
       },
       quota: [
         { name: '150мм', crates: 9, done: 9, recipe: { bmats: 100, emats: 0, hemats: 50, rmats: 0 }, comment: 'Стандартная фабрика' },
@@ -872,6 +889,7 @@
       if (!targetState.meta || typeof targetState.meta !== 'object') targetState.meta = {};
       if (typeof targetState.meta.updatedAt !== 'string') targetState.meta.updatedAt = '';
       if (typeof targetState.meta.savedAsName !== 'string') targetState.meta.savedAsName = '';
+      targetState.meta.programVersion = PROGRAM_VERSION;
       return targetState.meta;
     }
 
@@ -885,11 +903,32 @@
       });
     }
 
-    function updateModifiedDisplay() {
-      const el = $('modifiedAt');
-      if (!el) return;
+    function currentQuotaFileLabel() {
       ensureMeta(state);
-      el.textContent = formatDateTime(state.meta.updatedAt);
+      const savedName = String(state.meta.savedAsName || '').trim();
+      return savedName || 'автосохранение браузера';
+    }
+
+    function updateMetaDisplay() {
+      ensureMeta(state);
+      const modifiedEl = $('modifiedAt');
+      if (modifiedEl) modifiedEl.textContent = formatDateTime(state.meta.updatedAt);
+
+      const fileEl = $('quotaFileName');
+      if (fileEl) {
+        const label = currentQuotaFileLabel();
+        fileEl.textContent = label;
+        fileEl.title = label === 'автосохранение браузера'
+          ? 'JSON-файл ещё не выбран. Нажми «Сохранить как...», чтобы привязать файл квоты.'
+          : label;
+      }
+
+      const versionEl = $('programVersion');
+      if (versionEl) versionEl.textContent = PROGRAM_VERSION;
+    }
+
+    function updateModifiedDisplay() {
+      updateMetaDisplay();
     }
 
     function saveState(showStatus = false) {
@@ -1977,6 +2016,9 @@ ${factoryLines}
         const text = await file.text();
         pushUndoState();
         state = normalizeState(mergeDeep(structuredClone(defaultState), JSON.parse(text)));
+        ensureMeta(state);
+        state.meta.savedAsName = file.name || state.meta.savedAsName || '';
+        currentFileHandle = null;
         render();
       } catch {
         alert('Не получилось импортировать JSON');
