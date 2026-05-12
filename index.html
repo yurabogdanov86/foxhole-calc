@@ -1,0 +1,2015 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Foxhole — калькулятор логистической квоты</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: #374151;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --blue: #60a5fa;
+      --input: #0b1220;
+      --shadow: rgba(0, 0, 0, .35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0, var(--bg) 48%, #020617 100%);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(24px, 4vw, 38px);
+      letter-spacing: -.03em;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: -.01em;
+    }
+
+    h3 {
+      margin: 18px 0 10px;
+      font-size: 15px;
+      color: #d1d5db;
+    }
+
+    p { margin: 0; }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .save-status {
+      align-self: center;
+      color: var(--muted);
+      font-size: 12px;
+      min-width: 92px;
+    }
+
+    .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      margin-top: 10px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, .12);
+      border: 1px solid rgba(34, 197, 94, .28);
+      color: #bbf7d0;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #263244, #182235);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 9px 12px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px var(--shadow);
+      font-weight: 650;
+    }
+
+    button:hover { filter: brightness(1.08); }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      filter: grayscale(.3);
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      filter: none;
+      box-shadow: none;
+    }
+    button.danger { background: linear-gradient(180deg, #3b1217, #2a0d11); border-color: #7f1d1d; }
+    button.good { background: linear-gradient(180deg, #164a2a, #10351f); border-color: #166534; }
+    button.ghost { background: transparent; box-shadow: none; }
+
+    .main-toolbar {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 12px;
+      z-index: 1000;
+      max-width: none;
+      padding: 8px;
+      background: rgba(15, 23, 42, .92);
+      border: 1px solid rgba(148, 163, 184, .24);
+      border-radius: 16px;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, .42);
+      backdrop-filter: blur(10px);
+      justify-content: center;
+    }
+
+    .main-toolbar button {
+      box-shadow: none;
+    }
+
+    .main-toolbar .save-status {
+      min-width: 64px;
+    }
+
+    .main-toolbar .meta-info {
+      flex: 1 1 100%;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+      text-align: center;
+      padding: 0 4px 2px;
+    }
+
+    .main-toolbar .meta-info strong {
+      color: #e5e7eb;
+      font-weight: 800;
+    }
+
+    body { padding-bottom: 112px; }
+
+    /* На широком экране освобождаем справа место и переносим панель туда,
+       чтобы кнопки не перекрывали рабочие таблицы. */
+    @media (min-width: 1500px) {
+      body { padding-bottom: 0; }
+
+      .wrap {
+        /* Рабочая область автоматически занимает всё свободное место
+           до плавающей панели справа, но не заезжает под неё. */
+        width: calc(100vw - 36px - 280px - 24px - 20px);
+        max-width: none;
+        margin-left: 36px;
+        margin-right: 0;
+      }
+
+      .main-toolbar {
+        top: 92px;
+        right: 20px;
+        left: auto;
+        bottom: auto;
+        width: 280px;
+        max-width: 280px;
+        justify-content: flex-start;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .main-toolbar button {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+        padding: 9px 10px;
+      }
+
+      .main-toolbar #copyReportBtn {
+        flex-basis: 100%;
+      }
+
+      .main-toolbar .save-status {
+        flex: 1 1 100%;
+        min-width: 0;
+        text-align: center;
+      }
+
+      .main-toolbar .meta-info {
+        text-align: center;
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(31, 41, 55, .92), rgba(17, 24, 39, .96));
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 14px 32px var(--shadow);
+      overflow: hidden;
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    @media (max-width: 980px) {
+      .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+      header { flex-direction: column; }
+      .toolbar { justify-content: flex-start; }
+      .main-toolbar { justify-content: center; }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, .16);
+      vertical-align: middle;
+    }
+
+    th {
+      text-align: left;
+      color: #cbd5e1;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      background: rgba(15, 23, 42, .5);
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    input, select, textarea {
+      width: 100%;
+      color: var(--text);
+      background: var(--input);
+      border: 1px solid rgba(148, 163, 184, .22);
+      border-radius: 10px;
+      padding: 8px 9px;
+      outline: none;
+      font: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .15);
+    }
+
+    input[readonly] {
+      opacity: .82;
+      cursor: not-allowed;
+      border-style: dashed;
+    }
+
+    input[data-number] { text-align: right; }
+    textarea { min-height: 180px; resize: vertical; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .pill {
+      padding: 12px;
+      background: rgba(15, 23, 42, .72);
+      border: 1px solid rgba(148, 163, 184, .16);
+      border-radius: 14px;
+    }
+
+    .pill .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .pill .value {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 78px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .ok { color: #bbf7d0; background: rgba(34, 197, 94, .16); border: 1px solid rgba(34, 197, 94, .35); }
+    .bad { color: #fecaca; background: rgba(239, 68, 68, .16); border: 1px solid rgba(239, 68, 68, .35); }
+    .warn { color: #fde68a; background: rgba(245, 158, 11, .16); border: 1px solid rgba(245, 158, 11, .35); }
+
+    .row-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .row-actions button {
+      padding: 6px 8px;
+      border-radius: 9px;
+      box-shadow: none;
+      font-size: 12px;
+    }
+
+    .note {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(96, 165, 250, .1);
+      border: 1px solid rgba(96, 165, 250, .22);
+      color: #dbeafe;
+      margin-top: 12px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0 0;
+    }
+
+    .tab {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .7);
+      color: var(--muted);
+      border: 1px solid rgba(148, 163, 184, .16);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .tab.good { color: #bbf7d0; border-color: rgba(34, 197, 94, .28); background: rgba(34, 197, 94, .1); }
+    .tab.bad { color: #fecaca; border-color: rgba(239, 68, 68, .28); background: rgba(239, 68, 68, .1); }
+
+    .right { text-align: right; }
+    .nowrap { white-space: nowrap; }
+    .hidden { display: none; }
+    .subtle { color: #cbd5e1; }
+    .table-scroll { overflow-x: auto; }
+    .table-scroll table { min-width: 760px; }
+    .compact td, .compact th { padding: 6px 8px; }
+    .chipline {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .inline-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: #dbeafe;
+      font-size: 13px;
+      user-select: none;
+    }
+
+    .inline-check input {
+      width: auto;
+      min-width: 16px;
+      height: 16px;
+      accent-color: var(--blue);
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .mini-grid { grid-template-columns: 1fr; }
+    }
+
+    .quota-scroll table { min-width: 1500px; }
+    .factory-scroll table { min-width: 1560px; }
+
+    .drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, .7);
+      border: 1px solid rgba(148, 163, 184, .22);
+      color: #cbd5e1;
+      cursor: grab;
+      user-select: none;
+      font-weight: 900;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .drag-handle {
+      touch-action: none;
+    }
+
+    .drag-handle:active { cursor: grabbing; }
+    tr.dragging { opacity: .55; }
+    tr.drag-over td { background: rgba(96, 165, 250, .08); }
+    body.quota-row-dragging, body.quota-row-dragging * { cursor: grabbing !important; user-select: none !important; }
+
+    .refinery-scroll table { min-width: 1720px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Foxhole — калькулятор логистической квоты</h1>
+        <p class="muted">Вводишь, сколько накопал и что ставишь в переработку. Программа считает выход материалов, остаток/дефицит и готовит отчёт. Главное: <strong>Emats / Explosive Powder / Порох</strong> делаются дольше всего, поэтому скрап на Emats лучше ставить первым. После сдачи сделать скрин <strong>log list</strong> из игры в складе и отправить командиру в Discord.</p>
+        <div class="mode-badge">🏭 Режим: стандартная фабрика / Factory</div>
+      </div>
+      <div class="toolbar main-toolbar">
+        <button id="undoBtn" title="Отменить последнее действие, Ctrl+Z">↶ Отменить</button>
+        <button id="redoBtn" title="Вернуть отменённое действие, Ctrl+Y">↷ Вернуть</button>
+        <button class="good" id="saveBtn" title="Сохранить в браузере, Ctrl+S">💾 Сохранить</button>
+        <button id="saveAsBtn" title="Выбрать место сохранения JSON-файла. В Chrome/Edge можно заменить существующий файл">💾 Сохранить как...</button>
+        <span class="save-status" id="saveStatus">—</span>
+        <span class="meta-info">Изменено: <strong id="modifiedAt">—</strong></span>
+        <button class="good" id="copyReportBtn">Скопировать отчёт</button>
+        <button id="exportBtn">Экспорт JSON</button>
+        <button id="importBtn">Импорт JSON</button>
+        <button class="danger" id="resetBtn">Сброс</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card span-12">
+        <h2>1. Квота сдачи</h2>
+        <p class="muted small">Расход материалов указан для производства на стандартной фабрике / Factory. MPF и Facility здесь не учитываются. В колонках Bmats / Emats / HEmats / Rmats указывай расход на 1 ящик. Для строки «сдать материал отдельно» просто укажи этот материал на 1 ящик.</p>
+        <div class="table-scroll quota-scroll">
+          <table id="quotaTable">
+            <thead>
+              <tr>
+                <th style="width:42px;" title="Перетащи строку мышкой, чтобы изменить порядок">↕</th>
+                <th>Предмет / материал</th>
+                <th class="right">Ящиков</th>
+                <th class="right">Готово, ящ.</th>
+                <th class="right">Осталось</th>
+                <th class="right">Bmats / ящ.</th>
+                <th class="right">Emats / ящ.</th>
+                <th class="right">HEmats / ящ.</th>
+                <th class="right">Rmats / ящ.</th>
+                <th>Комментарий</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
+          <button id="addQuotaBtn">+ Добавить строку квоты</button>
+          <button id="applyRecipePresetsBtn" title="Подставляет известные рецепты стандартной фабрики / Factory по названию строк: 68мм, 120мм, 150мм, Alligator, HEmats, Rmats.">✓ Подставить рецепты Factory</button>
+        </div>
+        <p class="muted small" style="margin-top:6px;">Кнопка «Подставить рецепты Factory» заполняет колонки Bmats / Emats / HEmats / Rmats по названию строки. Это не производство, а только быстрый ввод рецептов для стандартной фабрики.</p>
+        <label class="inline-check">
+          <input type="checkbox" id="useQuotaRecipes" data-path="useQuotaRecipes" />
+          Использовать рецепты из квоты в расчётах разделов 2 и 5
+        </label>
+        <div class="mini-grid">
+          <div>
+            <h3>Материалы по квоте</h3>
+            <table id="quotaMaterialSummaryTable" class="compact">
+              <thead>
+                <tr>
+                  <th>Материал</th>
+                  <th class="right">Нужно</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div>
+            <h3>Сырьё под эти материалы</h3>
+            <table id="quotaRawSummaryTable" class="compact">
+              <thead>
+                <tr>
+                  <th>Сырьё</th>
+                  <th class="right">Минимум</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="summary">
+          <div class="pill"><div class="label">Всего ящиков к сдаче</div><div class="value" id="totalCrates">0</div></div>
+          <div class="pill"><div class="label">Боеприпасы / изделия</div><div class="value" id="factoryCrates">0</div></div>
+          <div class="pill"><div class="label">Материалы отдельно</div><div class="value" id="materialCrates">0</div></div>
+          <div class="pill"><div class="label">Статус</div><div class="value" id="globalStatus">—</div></div>
+        </div>
+      </section>
+
+      <section class="card span-6">
+        <h2>2. Что нужно накопать / цель добычи</h2>
+        <p class="muted small">Если точный минимум по новой квоте пока неизвестен — просто заполни колонку «План / цель». Расчётный минимум считается справочно из раздела 5.</p>
+        <table id="rawNeedTable">
+          <thead>
+            <tr>
+              <th>Сырьё</th>
+              <th class="right">Расчётный минимум</th>
+              <th class="right">План / цель</th>
+              <th class="right">Накопано</th>
+              <th class="right">Осталось до цели</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="card span-6">
+        <h2>3. Добыча / инвентарь</h2>
+        <p class="muted small">Добавляй рейсы, мешки или просто итоговые значения. Пустые строки считаются как 0.</p>
+        <table id="inventoryTable">
+          <thead>
+            <tr>
+              <th>Сырьё</th>
+              <th class="right">Количество</th>
+              <th>Заметка</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
+          <button id="addScrapBtn">+ Скрап</button>
+          <button id="addSulfurBtn">+ Сера</button>
+          <button id="addComponentsBtn">+ Компоненты</button>
+          <button id="addInventoryBtn">+ Добавить добычу</button>
+        </div>
+        <h3>Баланс сырья</h3>
+        <table id="rawBalanceTable" class="compact">
+          <thead>
+            <tr>
+              <th>Сырьё</th>
+              <th class="right">Накопано</th>
+              <th class="right">Внесено</th>
+              <th class="right">На руках</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="card span-12">
+        <h2>4. Переработка</h2>
+        <p class="muted small">«План поставить» — сколько сырья надо в итоге. «Уже внесено» — сколько реально закинул на станции переработки. Время считается через размер партии и время одной партии. Скорости: Bmats 2/сек, Emats 100 скрапа → 20 за 3:07, HEmats / Тяжелый порох ~15 сек/шт, Rmats ~40 сек/шт.</p>
+        <label class="inline-check" title="Когда включено, колонка «План поставить» сама пересчитывается из квоты и рецептов. Если по квоте материал не нужен — план станет 0.">
+          <input type="checkbox" id="autoSyncRefineryPlan" data-path="autoSyncRefineryPlan" />
+          Автоматически обновлять «План поставить» по квоте
+        </label>
+        <div class="table-scroll refinery-scroll">
+          <table id="refineryTable">
+            <thead>
+              <tr>
+                <th>Результат</th>
+                <th>Из сырья</th>
+                <th class="right">План поставить</th>
+                <th class="right">Уже внесено</th>
+                <th class="right">Осталось внести</th>
+                <th class="right">Коэф.</th>
+                <th class="right">Получится сейчас</th>
+                <th class="right">Уже произведено</th>
+                <th class="right">Осталось произвести</th>
+                <th class="right">По плану</th>
+                <th class="right">Сырья / партия</th>
+                <th class="right">Время / партия</th>
+                <th class="right">Партий всего</th>
+                <th class="right">Время всего</th>
+                <th class="right">Осталось времени</th>
+                <th class="right">Всего, ч</th>
+                <th class="right">Остаток по плану</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
+          <button id="syncRefineryPlanBtn">↻ Обновить «План поставить»</button>
+          <button class="good" id="autoDepositBtn">+ Авто-внести добытое по плану</button>
+          <button id="clearDepositedBtn">Обнулить «уже внесено»</button>
+        </div>
+      </section>
+
+      <section class="card span-12">
+        <h2>5. Нужно материалов после переработки</h2>
+        <p class="muted small">Если в разделе 1 заполнены рецепты и включена галочка, в расчёт берётся «Нужно по квоте». Если рецепт по материалу пустой — берётся ручной минимум.</p>
+        <div class="table-scroll">
+          <table id="materialNeedTable">
+            <thead>
+              <tr>
+                <th>Материал</th>
+                <th class="right">Нужно по квоте</th>
+                <th class="right">Ручной минимум</th>
+                <th class="right">В расчёте</th>
+                <th class="right">Уже в переработке даст</th>
+                <th class="right">Уже готово</th>
+                <th class="right">Осталось готовых</th>
+                <th class="right">Будет по плану</th>
+                <th class="right">Остаток по плану</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="note small">
+          Рецепты в квоте удобны для новых заданий: ввёл предмет, ящики и материалы на 1 ящик — программа сразу посчитала общую потребность и сырьё. Текущий режим рецептов: стандартная фабрика / Factory, без скидок MPF и без Facility-рецептов. Для HEmats / Тяжелый порох и Rmats, которые сдаёшь отдельно, указывай размер ящика: HEmats = 30, Rmats = 20.
+        </div>
+      </section>
+
+      <section class="card span-12">
+        <h2>6. План стандартной фабрики / Factory и дробление заказов</h2>
+        <p class="muted small">Расчёт этого раздела — для обычной стандартной фабрики / Factory. MPF-скидка и Facility-производство не учитываются. Предметы и направление материалов автоматически подтягиваются из квоты. В колонке «Мин / партия» укажи время одной партии: его можно посмотреть прямо в игре на фабрике или найти в wiki/интернете. Можно вводить минуты числом или формат времени, например 3:07.</p>
+        <label class="inline-check">
+          <input type="checkbox" id="autoSyncFactoryPlan" data-path="autoSyncFactoryPlan" />
+          Автоматически формировать план фабрики из квоты
+        </label>
+        <div class="table-scroll factory-scroll">
+          <table id="factoryTable">
+            <thead>
+              <tr>
+                <th>Предмет</th>
+                <th class="right">Ящиков</th>
+                <th class="right">Готово, ящ.</th>
+                <th class="right">Осталось, ящ.</th>
+                <th>Как дробить</th>
+                <th class="right">Ящ. / партия</th>
+                <th class="right" title="Время одной партии можно посмотреть в игре на фабрике или найти в wiki/интернете. Можно вводить 3:07.">Мин / партия ⓘ</th>
+                <th class="right">Партий всего</th>
+                <th class="right">Всего, мин</th>
+                <th class="right">Осталось, мин</th>
+                <th>Куда идут материалы</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
+          <button id="addFactoryBtn">+ Добавить фабричный заказ</button>
+        </div>
+        <div class="summary">
+          <div class="pill"><div class="label">Время фабрики всего</div><div class="value" id="factoryTime">0 мин</div></div>
+          <div class="pill"><div class="label">Осталось фабрики</div><div class="value" id="factoryTimeLeft">0 мин</div></div>
+          <div class="pill"><div class="label">Самая долгая переработка</div><div class="value" id="longestRefinery">—</div></div>
+          <div class="pill"><div class="label">Скрап в Bmats</div><div class="value" id="scrapToBmats">0</div></div>
+          <div class="pill"><div class="label">Скрап в Emats</div><div class="value" id="scrapToEmats">0</div></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <input id="importFile" class="hidden" type="file" accept="application/json" />
+
+  <script>
+    const STORAGE_KEY = 'foxhole-logistics-quota-v25';
+    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
+
+    const defaultState = {
+      useQuotaRecipes: true,
+      autoSyncRefineryPlan: true,
+      autoSyncFactoryPlan: true,
+      meta: {
+        updatedAt: '',
+        savedAsName: '',
+      },
+      quota: [
+        { name: '150мм', crates: 9, done: 9, recipe: { bmats: 100, emats: 0, hemats: 50, rmats: 0 }, comment: 'Стандартная фабрика' },
+        { name: 'HEmats', crates: 10, done: 10, recipe: { bmats: 0, emats: 0, hemats: 30, rmats: 0 }, comment: 'Сдать отдельно' },
+        { name: 'Rmats', crates: 10, done: 10, recipe: { bmats: 0, emats: 0, hemats: 0, rmats: 20 }, comment: 'Сдать отдельно' },
+        { name: 'Alligator Charge', crates: 4, done: 0, recipe: { bmats: 100, emats: 80, hemats: 0, rmats: 0 }, comment: 'Стандартная фабрика' },
+      ],
+      inventory: [
+        { raw: 'scrap', amount: 1500, note: 'рейс' },
+        { raw: 'sulfur', amount: 1500, note: 'рейс' },
+        { raw: 'components', amount: 1500, note: 'рейс' },
+      ],
+      materialsNeeded: {
+        bmats: 1300,
+        emats: 320,
+        hemats: 750,
+        rmats: 200,
+      },
+      reserveRaw: {
+        scrap: 4200,
+        sulfur: 3750,
+        components: 4000,
+      },
+      refinery: [
+        { material: 'bmats', raw: 'scrap', input: 2600, deposited: 0, produced: 0, ratio: 2, batchRaw: 4, batchMinutes: 1 / 60, minutes: 10.8333333333 },
+        { material: 'emats', raw: 'scrap', input: 1600, deposited: 0, produced: 0, ratio: 5, batchRaw: 100, batchMinutes: 187 / 60, minutes: 49.8666666667 },
+        { material: 'hemats', raw: 'sulfur', input: 3750, deposited: 0, produced: 0, ratio: 5, batchRaw: 5, batchMinutes: 15 / 60, minutes: 187.5 },
+        { material: 'rmats', raw: 'components', input: 4000, deposited: 0, produced: 0, ratio: 20, batchRaw: 20, batchMinutes: 40 / 60, minutes: 133.3333333333 },
+      ],
+      factory: [
+        { name: '150мм', crates: 9, done: 0, split: '4 + 4 + 1', batchCrates: 1, batchMinutes: 3.07, route: 'Bmats + HEmats' },
+        { name: 'Alligator Charge', crates: 4, done: 0, split: '4 одним заказом', batchCrates: 4, batchMinutes: 6.67, route: 'Bmats + Emats' },
+      ],
+      names: {
+        scrap: 'Скрап / Salvage',
+        sulfur: 'Сера / Sulfur',
+        components: 'Компоненты / Components',
+        bmats: 'Bmats',
+        emats: 'Emats / Explosive Powder / Порох',
+        hemats: 'HEmats / Тяжелый порох',
+        rmats: 'Rmats',
+      }
+    };
+
+    let state = normalizeState(loadState());
+    const HISTORY_LIMIT = 100;
+    const undoStack = [];
+    const redoStack = [];
+    let saveStatusTimer = null;
+    let touchOnNextSave = false;
+    let currentFileHandle = null;
+    let reportCache = '';
+
+    const rawKeys = ['scrap', 'sulfur', 'components'];
+    const materialKeys = ['bmats', 'emats', 'hemats', 'rmats'];
+
+    const $ = (id) => document.getElementById(id);
+    function n(value) {
+      if (value === null || value === undefined || value === '') return 0;
+      const raw = String(value).trim();
+      const compact = raw.replace(/\s+/g, '');
+      // Для полей времени можно вводить 3:07 = 3 минуты 7 секунд, либо 1:02:30 = 1 час 2 минуты 30 секунд.
+      if (/^\d+:\d{1,2}(:\d{1,2})?$/.test(compact)) {
+        const parts = compact.split(':').map(Number);
+        if (parts.length === 2) {
+          return parts[0] + parts[1] / 60;
+        }
+        return parts[0] * 60 + parts[1] + parts[2] / 60;
+      }
+      const normalized = compact.replace(',', '.');
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    const fmt = (value, digits = 0) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits }).format(n(value));
+
+    function formatDurationInput(minutes) {
+      const totalSeconds = Math.round(n(minutes) * 60);
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      if (s === 0) return String(m);
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function loadState() {
+      try {
+        let saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved && Array.isArray(STORAGE_FALLBACK_KEYS)) {
+          for (const key of STORAGE_FALLBACK_KEYS) {
+            saved = localStorage.getItem(key);
+            if (saved) break;
+          }
+        }
+        if (!saved) return structuredClone(defaultState);
+        return mergeDeep(structuredClone(defaultState), JSON.parse(saved));
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function applyKnownRefineryRates(targetState) {
+      for (const row of targetState.refinery || []) {
+        if (row.material === 'emats' && row.raw === 'scrap') {
+          row.ratio = 5;                // 5 salvage -> 1 Explosive Powder
+          row.batchRaw = 100;           // 100 salvage -> 20 Explosive Powder
+          row.batchMinutes = 187 / 60;  // 3 мин 07 сек = 187 сек
+        }
+        if (row.material === 'bmats' && row.raw === 'scrap') {
+          row.ratio = 2;                // 2 salvage -> 1 Bmat
+          row.batchRaw = 4;             // 4 salvage -> 2 Bmats
+          row.batchMinutes = 1 / 60;    // 2 Bmats в секунду
+        }
+        if (row.material === 'hemats' && row.raw === 'sulfur') {
+          row.ratio = 5;                // 5 sulfur -> 1 HEmat
+          row.batchRaw = 5;             // 5 sulfur -> 1 HEmat
+          row.batchMinutes = 15 / 60;   // примерно 15 секунд на 1 HEmat
+        }
+        if (row.material === 'rmats' && row.raw === 'components') {
+          row.ratio = 20;               // 20 components -> 1 Rmat
+          row.batchRaw = 20;            // 20 components -> 1 Rmat
+          row.batchMinutes = 40 / 60;   // примерно 40 секунд на 1 Rmat
+        }
+      }
+    }
+
+    function orderRefineryRows(targetState) {
+      const order = ['bmats', 'emats', 'hemats', 'rmats'];
+      if (!Array.isArray(targetState.refinery)) return;
+      targetState.refinery.sort((a, b) => {
+        const ai = order.indexOf(a.material);
+        const bi = order.indexOf(b.material);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      });
+    }
+
+    function normalizeState(loaded) {
+      const normalized = loaded || structuredClone(defaultState);
+      ensureMeta(normalized);
+      if (typeof normalized.autoSyncRefineryPlan !== 'boolean') normalized.autoSyncRefineryPlan = true;
+      if (typeof normalized.autoSyncFactoryPlan !== 'boolean') normalized.autoSyncFactoryPlan = true;
+      applyKnownRefineryRates(normalized);
+      orderRefineryRows(normalized);
+      for (const row of normalized.refinery || []) {
+        // Совместимость со старыми сохранениями: раньше было только общее поле minutes.
+        if (n(row.batchRaw) <= 0) row.batchRaw = Math.max(1, n(row.input));
+        if (n(row.batchMinutes) <= 0) row.batchMinutes = n(row.minutes);
+        row.minutes = refineryTotalMinutes(row);
+      }
+      for (const row of normalized.factory || []) {
+        if (n(row.batchCrates) <= 0) row.batchCrates = Math.max(1, n(row.crates));
+        if (n(row.batchMinutes) <= 0 && n(row.minutes) > 0) row.batchMinutes = n(row.minutes);
+      }
+      for (const row of normalized.quota || []) {
+        if (String(row.comment || '').trim() === 'Фабрика') row.comment = 'Стандартная фабрика';
+      }
+      return normalized;
+    }
+
+    function ensureMeta(targetState = state) {
+      if (!targetState.meta || typeof targetState.meta !== 'object') targetState.meta = {};
+      if (typeof targetState.meta.updatedAt !== 'string') targetState.meta.updatedAt = '';
+      if (typeof targetState.meta.savedAsName !== 'string') targetState.meta.savedAsName = '';
+      return targetState.meta;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleString('ru-RU', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    function updateModifiedDisplay() {
+      const el = $('modifiedAt');
+      if (!el) return;
+      ensureMeta(state);
+      el.textContent = formatDateTime(state.meta.updatedAt);
+    }
+
+    function saveState(showStatus = false) {
+      ensureMeta(state);
+      if (touchOnNextSave || !state.meta.updatedAt) {
+        state.meta.updatedAt = new Date().toISOString();
+        touchOnNextSave = false;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (showStatus) showSaveStatus('Сохранено');
+    }
+
+    function showSaveStatus(text = 'Сохранено') {
+      const el = $('saveStatus');
+      if (!el) return;
+      el.textContent = text;
+      if (saveStatusTimer) clearTimeout(saveStatusTimer);
+      saveStatusTimer = setTimeout(() => {
+        const current = $('saveStatus');
+        if (current && current.textContent === text) current.textContent = '—';
+      }, 1800);
+    }
+
+    function snapshotState() {
+      return JSON.stringify(state);
+    }
+
+    function restoreSnapshot(snapshot) {
+      try {
+        state = normalizeState(JSON.parse(snapshot));
+        render(true);
+      } catch {
+        alert('Не получилось восстановить действие');
+      }
+    }
+
+    function pushUndoState() {
+      touchOnNextSave = true;
+      const snapshot = snapshotState();
+      if (undoStack.length && undoStack[undoStack.length - 1] === snapshot) return;
+      undoStack.push(snapshot);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
+    function undoAction() {
+      if (!undoStack.length) return;
+      const current = snapshotState();
+      const previous = undoStack.pop();
+      redoStack.push(current);
+      touchOnNextSave = true;
+      restoreSnapshot(previous);
+      showSaveStatus('Отменено');
+    }
+
+    function redoAction() {
+      if (!redoStack.length) return;
+      const current = snapshotState();
+      const next = redoStack.pop();
+      undoStack.push(current);
+      touchOnNextSave = true;
+      restoreSnapshot(next);
+      showSaveStatus('Вернули');
+    }
+
+    function updateHistoryButtons() {
+      const undoBtn = $('undoBtn');
+      const redoBtn = $('redoBtn');
+      if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+      if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+    }
+
+    async function manualSave() {
+      saveState(false);
+      updateModifiedDisplay();
+
+      // Если файл был выбран через «Сохранить как...», обычная кнопка «Сохранить»
+      // будет перезаписывать именно этот JSON-файл. Если файл ещё не выбран —
+      // сохраняем только в браузере, как раньше.
+      if (currentFileHandle) {
+        try {
+          await writeStateToFileHandle(currentFileHandle);
+          showSaveStatus('Сохранено в файл');
+          return;
+        } catch (error) {
+          console.warn(error);
+          showSaveStatus('Нет доступа к файлу');
+          return;
+        }
+      }
+
+      showSaveStatus('Сохранено в браузере');
+    }
+
+    function stampForFileName(date = new Date()) {
+      const pad = (v) => String(v).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`;
+    }
+
+    function safeFileName(name) {
+      return String(name || '')
+        .trim()
+        .replace(/\.json$/i, '')
+        .replace(/[\\/:*?"<>|]+/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/^_+|_+$/g, '') || `foxhole-quota-${stampForFileName()}`;
+    }
+
+    function buildExportState(fileName = '') {
+      ensureMeta(state);
+      const exportState = structuredClone(state);
+      ensureMeta(exportState);
+      exportState.meta.savedAsName = fileName || exportState.meta.savedAsName || '';
+      exportState.meta.exportedAt = new Date().toISOString();
+      return exportState;
+    }
+
+    function downloadJson(filename, data) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function writeStateToFileHandle(fileHandle) {
+      const fileName = fileHandle?.name || state.meta?.savedAsName || `foxhole-quota-${stampForFileName(new Date())}.json`;
+      const exportState = buildExportState(fileName);
+      const blob = new Blob([JSON.stringify(exportState, null, 2)], { type: 'application/json' });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      ensureMeta(state);
+      state.meta.savedAsName = fileName;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      updateModifiedDisplay();
+    }
+
+    async function saveAsFile() {
+      saveState(false);
+      const suggestedName = safeFileName(state.meta?.savedAsName || `foxhole-quota-${stampForFileName(new Date())}`) + '.json';
+
+      // В Chrome/Edge открывается настоящее системное окно выбора файла.
+      // Можно выбрать папку, имя файла или существующий JSON и заменить его.
+      // В браузерах без File System Access API оставляем запасной вариант — скачивание.
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName,
+            types: [{
+              description: 'Foxhole quota JSON',
+              accept: { 'application/json': ['.json'] },
+            }],
+            excludeAcceptAllOption: false,
+          });
+          currentFileHandle = handle;
+          await writeStateToFileHandle(handle);
+          showSaveStatus('Файл сохранён');
+          return;
+        } catch (error) {
+          if (error?.name === 'AbortError') {
+            showSaveStatus('Отменено');
+            return;
+          }
+          console.warn(error);
+          showSaveStatus('Скачивание вместо окна');
+        }
+      }
+
+      const defaultName = suggestedName.replace(/\.json$/i, '');
+      const entered = prompt('Название файла для этой версии квоты:', defaultName);
+      if (entered === null) {
+        showSaveStatus('Отменено');
+        return;
+      }
+      const baseName = safeFileName(entered);
+      const fileName = `${baseName}.json`;
+      const exportState = buildExportState(fileName);
+      downloadJson(fileName, exportState);
+      state.meta.savedAsName = fileName;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      showSaveStatus('Файл скачан');
+      updateModifiedDisplay();
+    }
+
+    function mergeDeep(target, source) {
+      for (const key of Object.keys(source || {})) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          target[key] = mergeDeep(target[key] || {}, source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      }
+      return target;
+    }
+
+    function formatMinutes(minutes) {
+      const totalSeconds = Math.round(n(minutes) * 60);
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const sec = totalSeconds % 60;
+      const parts = [];
+      if (h) parts.push(`${h} ч`);
+      if (m) parts.push(`${m} мин`);
+      if (sec) parts.push(`${sec} сек`);
+      return parts.length ? parts.join(' ') : '0 мин';
+    }
+
+    function formatHoursDecimal(minutes) {
+      return fmt(n(minutes) / 60, 2);
+    }
+
+    function statusBadge(value, zeroOk = true) {
+      const num = n(value);
+      if (num > 0) return `<span class="status ok">+${fmt(num)}</span>`;
+      if (num === 0 && zeroOk) return `<span class="status ok">ровно</span>`;
+      if (num === 0) return `<span class="status warn">0</span>`;
+      return `<span class="status bad">${fmt(num)}</span>`;
+    }
+
+    function todoBadge(value) {
+      const num = n(value);
+      if (num > 0) return `<span class="status warn">${fmt(num)}</span>`;
+      if (num === 0) return `<span class="status ok">внесено</span>`;
+      return `<span class="status bad">перевнесено ${fmt(Math.abs(num))}</span>`;
+    }
+
+    function progressBadge(value, doneText = 'готово') {
+      const num = n(value);
+      if (num > 0) return `<span class="status warn">${fmt(num)}</span>`;
+      if (num === 0) return `<span class="status ok">${doneText}</span>`;
+      return `<span class="status bad">лишнее ${fmt(Math.abs(num))}</span>`;
+    }
+
+    function calc() {
+      const inventoryTotals = Object.fromEntries(rawKeys.map(k => [k, 0]));
+      for (const row of state.inventory) {
+        if (!inventoryTotals[row.raw]) inventoryTotals[row.raw] = 0;
+        inventoryTotals[row.raw] += n(row.amount);
+      }
+
+      const quotaMaterialNeed = Object.fromEntries(materialKeys.map(k => [k, 0]));
+      for (const row of state.quota) {
+        const crates = n(row.crates);
+        const recipe = row.recipe || {};
+        for (const k of materialKeys) {
+          quotaMaterialNeed[k] += crates * n(recipe[k]);
+        }
+      }
+
+      const effectiveMaterialsNeeded = Object.fromEntries(materialKeys.map(k => {
+        const fromQuota = n(quotaMaterialNeed[k]);
+        const manual = n(state.materialsNeeded[k]);
+        return [k, state.useQuotaRecipes ? fromQuota : manual];
+      }));
+
+      const refineryOutputs = Object.fromEntries(materialKeys.map(k => [k, 0]));
+      const refineryDepositedOutputs = Object.fromEntries(materialKeys.map(k => [k, 0]));
+      const refineryProducedOutputs = Object.fromEntries(materialKeys.map(k => [k, 0]));
+      const refineryRawInputs = Object.fromEntries(rawKeys.map(k => [k, 0]));
+      const refineryRawDeposited = Object.fromEntries(rawKeys.map(k => [k, 0]));
+
+      for (const row of state.refinery) {
+        const ratio = Math.max(n(row.ratio), 1);
+        refineryOutputs[row.material] = (refineryOutputs[row.material] || 0) + Math.floor(n(row.input) / ratio);
+        refineryDepositedOutputs[row.material] = (refineryDepositedOutputs[row.material] || 0) + Math.floor(n(row.deposited) / ratio);
+        refineryProducedOutputs[row.material] = (refineryProducedOutputs[row.material] || 0) + n(row.produced);
+        refineryRawInputs[row.raw] = (refineryRawInputs[row.raw] || 0) + n(row.input);
+        refineryRawDeposited[row.raw] = (refineryRawDeposited[row.raw] || 0) + n(row.deposited);
+      }
+
+      const rawNeedFromQuota = Object.fromEntries(rawKeys.map(k => [k, 0]));
+      const exactRawNeed = Object.fromEntries(rawKeys.map(k => [k, 0]));
+      for (const row of state.refinery) {
+        const ratio = Math.max(n(row.ratio), 1);
+        rawNeedFromQuota[row.raw] = (rawNeedFromQuota[row.raw] || 0) + n(quotaMaterialNeed[row.material]) * ratio;
+        exactRawNeed[row.raw] = (exactRawNeed[row.raw] || 0) + n(effectiveMaterialsNeeded[row.material]) * ratio;
+      }
+
+      const materialRemainders = Object.fromEntries(materialKeys.map(k => [k, n(refineryOutputs[k]) - n(effectiveMaterialsNeeded[k]) ]));
+      const depositedMaterialRemainders = Object.fromEntries(materialKeys.map(k => [k, n(refineryDepositedOutputs[k]) - n(effectiveMaterialsNeeded[k]) ]));
+      const producedMaterialLeft = Object.fromEntries(materialKeys.map(k => [k, n(effectiveMaterialsNeeded[k]) - n(refineryProducedOutputs[k]) ]));
+      const reserveRemainders = Object.fromEntries(rawKeys.map(k => [k, n(inventoryTotals[k]) - n(state.reserveRaw[k]) ]));
+      const exactRemainders = Object.fromEntries(rawKeys.map(k => [k, n(inventoryTotals[k]) - n(exactRawNeed[k]) ]));
+      const rawOnHand = Object.fromEntries(rawKeys.map(k => [k, n(inventoryTotals[k]) - n(refineryRawDeposited[k]) ]));
+      const rawAfterPlan = Object.fromEntries(rawKeys.map(k => [k, n(inventoryTotals[k]) - n(refineryRawInputs[k]) ]));
+
+      return {
+        inventoryTotals,
+        quotaMaterialNeed,
+        rawNeedFromQuota,
+        effectiveMaterialsNeeded,
+        refineryOutputs,
+        refineryDepositedOutputs,
+        refineryProducedOutputs,
+        refineryRawInputs,
+        refineryRawDeposited,
+        exactRawNeed,
+        materialRemainders,
+        depositedMaterialRemainders,
+        producedMaterialLeft,
+        reserveRemainders,
+        exactRemainders,
+        rawOnHand,
+        rawAfterPlan,
+      };
+    }
+
+    function renderQuota(c) {
+      const tbody = $('quotaTable').querySelector('tbody');
+      tbody.innerHTML = state.quota.map((row, i) => {
+        const recipe = row.recipe || {};
+        const left = n(row.crates) - n(row.done);
+        return `
+          <tr data-drag-index="${i}">
+            <td class="row-actions"><button type="button" class="drag-handle" data-drag-index="${i}" title="Зажми и перетащи строку мышкой">☰</button></td>
+            <td><input value="${escapeHtml(row.name)}" data-path="quota.${i}.name" /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.crates)}" data-path="quota.${i}.crates" /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.done)}" data-path="quota.${i}.done" /></td>
+            <td class="right">${progressBadge(left)}</td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(recipe.bmats)}" data-path="quota.${i}.recipe.bmats" /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(recipe.emats)}" data-path="quota.${i}.recipe.emats" /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(recipe.hemats)}" data-path="quota.${i}.recipe.hemats" /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(recipe.rmats)}" data-path="quota.${i}.recipe.rmats" /></td>
+            <td><input value="${escapeHtml(row.comment)}" data-path="quota.${i}.comment" /></td>
+            <td class="row-actions"><button class="danger" data-remove="quota.${i}">×</button></td>
+          </tr>
+        `;
+      }).join('');
+
+      const checkbox = $('useQuotaRecipes');
+      if (checkbox) checkbox.checked = !!state.useQuotaRecipes;
+
+      $('quotaMaterialSummaryTable').querySelector('tbody').innerHTML = materialKeys.map(k => `
+        <tr>
+          <td>${state.names[k]}</td>
+          <td class="right">${fmt(c.quotaMaterialNeed[k])}</td>
+        </tr>
+      `).join('');
+
+      $('quotaRawSummaryTable').querySelector('tbody').innerHTML = rawKeys.map(k => `
+        <tr>
+          <td>${state.names[k]}</td>
+          <td class="right">${fmt(c.rawNeedFromQuota[k])}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRawNeed(c) {
+      const tbody = $('rawNeedTable').querySelector('tbody');
+      tbody.innerHTML = rawKeys.map(k => `
+        <tr>
+          <td>${state.names[k]}</td>
+          <td class="right">${fmt(c.exactRawNeed[k])}</td>
+          <td><input type="text" inputmode="numeric" data-number="true" value="${n(state.reserveRaw[k])}" data-path="reserveRaw.${k}" /></td>
+          <td class="right">${fmt(c.inventoryTotals[k])}</td>
+          <td class="right">${statusBadge(c.reserveRemainders[k])}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderInventory() {
+      const tbody = $('inventoryTable').querySelector('tbody');
+      tbody.innerHTML = state.inventory.map((row, i) => `
+        <tr>
+          <td>
+            <select data-path="inventory.${i}.raw">
+              ${rawKeys.map(k => `<option value="${k}" ${row.raw === k ? 'selected' : ''}>${state.names[k]}</option>`).join('')}
+            </select>
+          </td>
+          <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.amount)}" data-path="inventory.${i}.amount" /></td>
+          <td><input value="${escapeHtml(row.note || '')}" data-path="inventory.${i}.note" /></td>
+          <td class="row-actions"><button class="danger" data-remove="inventory.${i}">×</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRawBalance(c) {
+      const tbody = $('rawBalanceTable').querySelector('tbody');
+      tbody.innerHTML = rawKeys.map(k => `
+        <tr>
+          <td>${state.names[k]}</td>
+          <td class="right">${fmt(c.inventoryTotals[k])}</td>
+          <td class="right">${fmt(c.refineryRawDeposited[k])}</td>
+          <td class="right">${c.rawOnHand[k] < 0 ? statusBadge(c.rawOnHand[k]) : fmt(c.rawOnHand[k])}</td>
+        </tr>
+      `).join('');
+    }
+
+    function refineryBatchRaw(row) {
+      const direct = n(row.batchRaw);
+      if (direct > 0) return direct;
+      return Math.max(1, n(row.input));
+    }
+
+    function refineryBatchMinutes(row) {
+      const direct = n(row.batchMinutes);
+      if (direct > 0) return direct;
+      const oldTotal = n(row.minutes);
+      if (oldTotal <= 0) return 0;
+      return oldTotal;
+    }
+
+    function refineryBatchesTotal(row) {
+      return Math.ceil(Math.max(0, n(row.input)) / refineryBatchRaw(row));
+    }
+
+    function refineryRawLeft(row) {
+      return n(row.input) - n(row.deposited);
+    }
+
+    function refineryBatchesLeft(row) {
+      return Math.ceil(Math.max(0, refineryRawLeft(row)) / refineryBatchRaw(row));
+    }
+
+    function refineryTotalMinutes(row) {
+      return refineryBatchesTotal(row) * refineryBatchMinutes(row);
+    }
+
+    function refineryLeftMinutes(row) {
+      return refineryBatchesLeft(row) * refineryBatchMinutes(row);
+    }
+
+    function renderRefinery(c) {
+      const autoPlanCheckbox = $('autoSyncRefineryPlan');
+      if (autoPlanCheckbox) autoPlanCheckbox.checked = !!state.autoSyncRefineryPlan;
+      const tbody = $('refineryTable').querySelector('tbody');
+      const autoPlan = !!state.autoSyncRefineryPlan;
+      tbody.innerHTML = state.refinery.map((row, i) => {
+        const ratio = Math.max(n(row.ratio), 1);
+        const plannedProduced = Math.floor(n(row.input) / ratio);
+        const depositedProduced = Math.floor(n(row.deposited) / ratio);
+        const produced = n(row.produced);
+        const depositLeft = refineryRawLeft(row);
+        const produceLeft = n(c.effectiveMaterialsNeeded[row.material]) - produced;
+        const rem = plannedProduced - n(c.effectiveMaterialsNeeded[row.material]);
+        const batchRaw = refineryBatchRaw(row);
+        const batchMinutes = refineryBatchMinutes(row);
+        const batchesTotal = refineryBatchesTotal(row);
+        const totalMinutes = refineryTotalMinutes(row);
+        const leftMinutes = refineryLeftMinutes(row);
+        row.minutes = totalMinutes;
+        return `
+          <tr>
+            <td>${state.names[row.material]}</td>
+            <td>${state.names[row.raw]}</td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.input)}" data-path="refinery.${i}.input" ${autoPlan ? 'readonly title="Автоплан включён: значение считается из квоты. Чтобы править вручную, сними галочку автоплана."' : ''} /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.deposited)}" data-path="refinery.${i}.deposited" /></td>
+            <td class="right">${todoBadge(depositLeft)}</td>
+            <td><input type="text" inputmode="decimal" data-number="true" value="${n(row.ratio)}" data-path="refinery.${i}.ratio" /></td>
+            <td class="right">${fmt(depositedProduced)}</td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${produced}" data-path="refinery.${i}.produced" /></td>
+            <td class="right">${progressBadge(produceLeft, 'готово')}</td>
+            <td class="right">${fmt(plannedProduced)}</td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${batchRaw}" data-path="refinery.${i}.batchRaw" /></td>
+            <td><input type="text" inputmode="decimal" data-number="true" value="${formatDurationInput(batchMinutes)}" data-path="refinery.${i}.batchMinutes" /></td>
+            <td class="right">${fmt(batchesTotal)}</td>
+            <td class="right">${formatMinutes(totalMinutes)}</td>
+            <td class="right">${formatMinutes(leftMinutes)}</td>
+            <td class="right">${formatHoursDecimal(totalMinutes)}</td>
+            <td class="right">${statusBadge(rem)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderMaterialNeed(c) {
+      const tbody = $('materialNeedTable').querySelector('tbody');
+      tbody.innerHTML = materialKeys.map(k => {
+        const fromQuota = n(c.quotaMaterialNeed[k]);
+        const manual = n(state.materialsNeeded[k]);
+        const effective = n(c.effectiveMaterialsNeeded[k]);
+        const source = state.useQuotaRecipes ? 'квота' : 'ручн.';
+        return `
+          <tr>
+            <td>${state.names[k]}</td>
+            <td class="right">${fmt(fromQuota)}</td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${manual}" data-path="materialsNeeded.${k}" /></td>
+            <td class="right">${fmt(effective)} <span class="muted small">${source}</span></td>
+            <td class="right">${fmt(c.refineryDepositedOutputs[k])}</td>
+            <td class="right">${fmt(c.refineryProducedOutputs[k])}</td>
+            <td class="right">${progressBadge(c.producedMaterialLeft[k], 'готово')}</td>
+            <td class="right">${fmt(c.refineryOutputs[k])}</td>
+            <td class="right">${statusBadge(c.materialRemainders[k])}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function inferBatchCountFromSplit(split) {
+      const text = String(split || '').trim();
+      if (!text) return 0;
+      const plusCount = (text.match(/\+/g) || []).length;
+      if (plusCount > 0) return plusCount + 1;
+      const numbers = text.match(/\d+(?:[,.]\d+)?/g);
+      if (numbers && numbers.length > 1) return numbers.length;
+      if (/одним|1\s*(заказ|парт)/i.test(text)) return 1;
+      return 0;
+    }
+
+    function factoryBatchCrates(row) {
+      const value = n(row.batchCrates);
+      if (value > 0) return value;
+      const inferredBatches = inferBatchCountFromSplit(row.split);
+      if (inferredBatches > 0) return Math.max(1, Math.ceil(n(row.crates) / inferredBatches));
+      return Math.max(1, n(row.crates));
+    }
+
+    function factoryBatchMinutes(row) {
+      const direct = n(row.batchMinutes);
+      if (direct > 0) return direct;
+      const oldTotal = n(row.minutes);
+      if (oldTotal <= 0) return 0;
+      const inferredBatches = inferBatchCountFromSplit(row.split) || Math.ceil(Math.max(0, n(row.crates)) / factoryBatchCrates(row)) || 1;
+      return oldTotal / Math.max(1, inferredBatches);
+    }
+
+    function factoryBatchesTotal(row) {
+      return Math.ceil(Math.max(0, n(row.crates)) / factoryBatchCrates(row));
+    }
+
+    function factoryCratesLeft(row) {
+      return n(row.crates) - n(row.done);
+    }
+
+    function factoryBatchesLeft(row) {
+      return Math.ceil(Math.max(0, factoryCratesLeft(row)) / factoryBatchCrates(row));
+    }
+
+    function factoryTotalMinutes(row) {
+      return factoryBatchesTotal(row) * factoryBatchMinutes(row);
+    }
+
+    function factoryLeftMinutes(row) {
+      return factoryBatchesLeft(row) * factoryBatchMinutes(row);
+    }
+
+    function renderFactory() {
+      const tbody = $('factoryTable').querySelector('tbody');
+      const checkbox = $('autoSyncFactoryPlan');
+      if (checkbox) checkbox.checked = !!state.autoSyncFactoryPlan;
+      const auto = !!state.autoSyncFactoryPlan;
+      const readonly = auto ? 'readonly title="Заполняется автоматически из раздела 1. Чтобы править вручную, сними галочку автоплана фабрики."' : '';
+      tbody.innerHTML = state.factory.map((row, i) => {
+        const leftCrates = factoryCratesLeft(row);
+        const batchesTotal = factoryBatchesTotal(row);
+        const totalMinutes = factoryTotalMinutes(row);
+        const leftMinutes = factoryLeftMinutes(row);
+        const removeButton = auto ? '' : `<button class="danger" data-remove="factory.${i}">×</button>`;
+        return `
+          <tr>
+            <td><input value="${escapeHtml(row.name)}" data-path="factory.${i}.name" ${readonly} /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.crates)}" data-path="factory.${i}.crates" ${readonly} /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${n(row.done)}" data-path="factory.${i}.done" /></td>
+            <td class="right">${progressBadge(leftCrates)}</td>
+            <td><input value="${escapeHtml(row.split)}" data-path="factory.${i}.split" /></td>
+            <td><input type="text" inputmode="numeric" data-number="true" value="${factoryBatchCrates(row)}" data-path="factory.${i}.batchCrates" /></td>
+            <td><input type="text" inputmode="decimal" data-number="true" value="${factoryBatchMinutes(row)}" data-path="factory.${i}.batchMinutes" title="Время одной партии можно посмотреть в игре на фабрике или найти в wiki/интернете. Можно вводить 3:07." /></td>
+            <td class="right">${fmt(batchesTotal)}</td>
+            <td class="right">${formatMinutes(totalMinutes)} <span class="muted small">(${formatHoursDecimal(totalMinutes)} ч)</span></td>
+            <td class="right">${formatMinutes(leftMinutes)} <span class="muted small">(${formatHoursDecimal(leftMinutes)} ч)</span></td>
+            <td><input value="${escapeHtml(row.route)}" data-path="factory.${i}.route" ${readonly} /></td>
+            <td class="row-actions">${removeButton}</td>
+          </tr>
+        `;
+      }).join('');
+      const addBtn = $('addFactoryBtn');
+      if (addBtn) {
+        addBtn.disabled = auto;
+        addBtn.title = auto ? 'План фабрики формируется автоматически из квоты. Для ручных строк сними галочку автоплана.' : '';
+      }
+    }
+
+    function renderSummary(c) {
+      const totalCrates = state.quota.reduce((s, r) => s + n(r.crates), 0);
+      const doneCrates = state.quota.reduce((s, r) => s + n(r.done), 0);
+      const factoryNames = new Set(state.factory.map(r => r.name));
+      const factoryCrates = state.quota.filter(r => factoryNames.has(r.name)).reduce((s, r) => s + n(r.crates), 0);
+      const materialCrates = totalCrates - factoryCrates;
+      const anyBad = [...Object.values(c.materialRemainders), ...Object.values(c.reserveRemainders), ...Object.values(c.rawOnHand)].some(v => v < 0);
+      const factoryMinutes = state.factory.reduce((s, r) => s + factoryTotalMinutes(r), 0);
+      const factoryMinutesLeft = state.factory.reduce((s, r) => s + factoryLeftMinutes(r), 0);
+      const longest = [...state.refinery].sort((a, b) => refineryTotalMinutes(b) - refineryTotalMinutes(a))[0];
+
+      $('totalCrates').textContent = `${fmt(doneCrates)} / ${fmt(totalCrates)}`;
+      $('factoryCrates').textContent = fmt(factoryCrates);
+      $('materialCrates').textContent = fmt(materialCrates);
+      $('globalStatus').innerHTML = anyBad ? '<span class="status bad">не хватает</span>' : '<span class="status ok">нормально</span>';
+      $('factoryTime').textContent = formatMinutes(factoryMinutes);
+      $('factoryTimeLeft').textContent = formatMinutes(factoryMinutesLeft);
+      $('longestRefinery').textContent = longest ? `${state.names[longest.material]} — ${formatMinutes(refineryTotalMinutes(longest))} (${formatHoursDecimal(refineryTotalMinutes(longest))} ч)` : '—';
+      $('scrapToBmats').textContent = fmt(state.refinery.find(r => r.material === 'bmats')?.input || 0);
+      $('scrapToEmats').textContent = fmt(state.refinery.find(r => r.material === 'emats')?.input || 0);
+    }
+
+    function renderReport(c) {
+      const totalCrates = state.quota.reduce((s, r) => s + n(r.crates), 0);
+      const doneCrates = state.quota.reduce((s, r) => s + n(r.done), 0);
+      const refineryLines = state.refinery.map(r => {
+        const ratio = Math.max(n(r.ratio), 1);
+        const planOut = Math.floor(n(r.input) / ratio);
+        const depositedOut = Math.floor(n(r.deposited) / ratio);
+        const left = n(r.input) - n(r.deposited);
+        const producedLeft = n(c.effectiveMaterialsNeeded[r.material]) - n(r.produced);
+        return `- ${state.names[r.material]}: план ${fmt(r.input)} ${state.names[r.raw]} -> ${fmt(planOut)} шт; уже внесено ${fmt(r.deposited)} -> ${fmt(depositedOut)} шт; уже произведено ${fmt(r.produced)}; осталось произвести ${fmt(Math.max(0, producedLeft))}; осталось внести ${fmt(left)}; партия ${fmt(refineryBatchRaw(r))} сырья × ${formatDurationInput(refineryBatchMinutes(r))}; партий всего ${fmt(refineryBatchesTotal(r))}; время всего ~${formatMinutes(refineryTotalMinutes(r))}; осталось времени ~${formatMinutes(refineryLeftMinutes(r))}`;
+      }).join('\n');
+      const quotaLines = state.quota.map(r => {
+        const recipe = r.recipe || {};
+        const recipeText = materialKeys
+          .filter(k => n(recipe[k]) > 0)
+          .map(k => `${state.names[k]} ${fmt(recipe[k])}/ящ.`)
+          .join(', ');
+        const left = n(r.crates) - n(r.done);
+        return `- ${fmt(r.crates)} ящ. — ${r.name}; готово ${fmt(r.done)}, осталось ${fmt(Math.max(0, left))}${recipeText ? `; рецепт: ${recipeText}` : ''}${r.comment ? ` (${r.comment})` : ''}`;
+      }).join('\n');
+      const materialLines = materialKeys.map(k => `- ${state.names[k]}: по квоте ${fmt(c.quotaMaterialNeed[k])}, в расчёте ${fmt(c.effectiveMaterialsNeeded[k])}, уже в переработке даст ${fmt(c.refineryDepositedOutputs[k])}, уже готово ${fmt(c.refineryProducedOutputs[k])}, осталось готовых ${fmt(Math.max(0, c.producedMaterialLeft[k]))}, будет по плану ${fmt(c.refineryOutputs[k])}, остаток по плану ${fmt(c.materialRemainders[k])}`).join('\n');
+      const rawLines = rawKeys.map(k => `- ${state.names[k]}: минимум по расчёту ${fmt(c.exactRawNeed[k])}, накопано ${fmt(c.inventoryTotals[k])}, внесено ${fmt(c.refineryRawDeposited[k])}, на руках ${fmt(c.rawOnHand[k])}, цель ${fmt(state.reserveRaw[k])}, осталось до цели ${fmt(Math.max(0, -c.reserveRemainders[k]))}`).join('\n');
+      const factoryLines = state.factory.map(r => {
+        const leftCrates = factoryCratesLeft(r);
+        return `- ${r.name}: план ${fmt(r.crates)} ящ.; готово ${fmt(r.done)}, осталось ${fmt(Math.max(0, leftCrates))}; партия ${fmt(factoryBatchCrates(r))} ящ. × ${fmt(factoryBatchMinutes(r), 2)} мин; партий всего ${fmt(factoryBatchesTotal(r))}; время всего ~${formatMinutes(factoryTotalMinutes(r))}; осталось времени ~${formatMinutes(factoryLeftMinutes(r))}; ${r.route}`;
+      }).join('\n');
+
+      reportCache = `ФИНАЛЬНАЯ ПАМЯТКА ПО ЛОГИСТИЧЕСКОЙ КВОТЕ
+
+ТИП ПРОИЗВОДСТВА: стандартная фабрика / Factory. MPF и Facility не учитываются.
+
+КВОТА:
+${quotaLines}
+
+ВСЕГО СДАТЬ: ${fmt(totalCrates)} ящиков
+ГОТОВО: ${fmt(doneCrates)} ящиков
+ОСТАЛОСЬ: ${fmt(Math.max(0, totalCrates - doneCrates))} ящиков
+
+ДОБЫЧА / СЫРЬЁ:
+${rawLines}
+
+ПЕРЕРАБОТКА:
+${refineryLines}
+
+МАТЕРИАЛЫ ПОСЛЕ ПЕРЕРАБОТКИ:
+${materialLines}
+
+СТАНДАРТНАЯ ФАБРИКА / FACTORY:
+${factoryLines}
+
+Главное: Emats / Explosive Powder / Порох делаются дольше всего, поэтому скрап на Emats лучше ставить первым.
+После сдачи сделать скрин log list из игры в складе и отправить командиру в Discord.`;
+      const reportEl = $('reportText');
+      if (reportEl) reportEl.value = reportCache;
+    }
+
+    function captureFocus() {
+      const el = document.activeElement;
+      if (!el || !el.dataset || !el.dataset.path) return null;
+      let selectionStart = null;
+      let selectionEnd = null;
+      try {
+        selectionStart = el.selectionStart;
+        selectionEnd = el.selectionEnd;
+      } catch {}
+      return { path: el.dataset.path, selectionStart, selectionEnd, value: el.value };
+    }
+
+    function captureScrollPositions() {
+      return {
+        windowX: window.scrollX,
+        windowY: window.scrollY,
+        tableScrolls: [...document.querySelectorAll('.table-scroll')].map((el, index) => ({
+          index,
+          scrollLeft: el.scrollLeft,
+          scrollTop: el.scrollTop,
+        })),
+      };
+    }
+
+    function restoreScrollPositions(scrollState) {
+      if (!scrollState) return;
+      const restore = () => {
+        const tableScrolls = scrollState.tableScrolls || [];
+        document.querySelectorAll('.table-scroll').forEach((el, index) => {
+          const pos = tableScrolls.find(item => item.index === index);
+          if (!pos) return;
+          el.scrollLeft = pos.scrollLeft;
+          el.scrollTop = pos.scrollTop;
+        });
+        if (Number.isFinite(scrollState.windowX) && Number.isFinite(scrollState.windowY)) {
+          window.scrollTo(scrollState.windowX, scrollState.windowY);
+        }
+      };
+
+      requestAnimationFrame(() => {
+        restore();
+        setTimeout(restore, 0);
+      });
+    }
+
+    function restoreFocus(focus) {
+      if (!focus?.path) return;
+      requestAnimationFrame(() => {
+        const el = [...document.querySelectorAll('[data-path]')].find(node => node.dataset.path === focus.path);
+        if (!el) return;
+        el.focus({ preventScroll: true });
+        if (typeof focus.value === 'string') el.value = focus.value;
+        try {
+          if (typeof focus.selectionStart === 'number' && el.setSelectionRange) {
+            el.setSelectionRange(focus.selectionStart, focus.selectionEnd);
+          }
+        } catch {}
+      });
+    }
+
+    function render(preserveFocus = false) {
+      const focus = preserveFocus ? captureFocus() : null;
+      const scrollState = preserveFocus ? captureScrollPositions() : null;
+      if (state.autoSyncRefineryPlan) updateRefineryPlanFromQuota();
+      if (state.autoSyncFactoryPlan) syncFactoryPlanFromQuota();
+      const c = calc();
+      renderQuota(c);
+      renderRawNeed(c);
+      renderInventory();
+      renderRawBalance(c);
+      renderRefinery(c);
+      renderMaterialNeed(c);
+      renderFactory();
+      renderSummary(c);
+      renderReport(c);
+      bindDynamicInputs();
+      saveState();
+      updateModifiedDisplay();
+      updateHistoryButtons();
+      restoreScrollPositions(scrollState);
+      restoreFocus(focus);
+    }
+
+    function setByPath(path, value) {
+      const parts = path.split('.');
+      let obj = state;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (obj[part] === undefined || obj[part] === null || typeof obj[part] !== 'object') obj[part] = {};
+        obj = obj[part];
+      }
+      const key = parts.at(-1);
+      obj[key] = value;
+    }
+
+    function removeByPath(path) {
+      pushUndoState();
+      const [collection, index] = path.split('.');
+      state[collection].splice(Number(index), 1);
+      render();
+    }
+
+    function moveQuotaRow(fromIndex, toIndex) {
+      fromIndex = Number(fromIndex);
+      toIndex = Number(toIndex);
+      if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex === toIndex) return;
+      if (fromIndex < 0 || toIndex < 0 || fromIndex >= state.quota.length || toIndex >= state.quota.length) return;
+      pushUndoState();
+      const [row] = state.quota.splice(fromIndex, 1);
+      state.quota.splice(toIndex, 0, row);
+      render();
+    }
+
+    function bindQuotaDrag() {
+      const tableBody = $('quotaTable')?.querySelector('tbody');
+      if (!tableBody) return;
+
+      let dragging = null;
+      let currentOver = null;
+
+      const clearDragOver = () => {
+        document.querySelectorAll('#quotaTable tbody tr.drag-over').forEach(el => el.classList.remove('drag-over'));
+      };
+
+      const rowFromPoint = (clientX, clientY) => {
+        const el = document.elementFromPoint(clientX, clientY);
+        return el?.closest?.('#quotaTable tbody tr[data-drag-index]') || null;
+      };
+
+      const finishDrag = (clientX, clientY) => {
+        if (!dragging) return;
+        const from = dragging.from;
+        const targetRow = rowFromPoint(clientX, clientY) || currentOver;
+        const to = targetRow ? Number(targetRow.dataset.dragIndex) : from;
+        dragging.row?.classList.remove('dragging');
+        document.body.classList.remove('quota-row-dragging');
+        clearDragOver();
+        dragging = null;
+        currentOver = null;
+        if (Number.isInteger(to) && to !== from) moveQuotaRow(from, to);
+      };
+
+      document.querySelectorAll('#quotaTable .drag-handle').forEach(handle => {
+        handle.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          const row = handle.closest('tr[data-drag-index]');
+          if (!row) return;
+          e.preventDefault();
+          dragging = { from: Number(row.dataset.dragIndex), row, pointerId: e.pointerId };
+          currentOver = row;
+          row.classList.add('dragging');
+          document.body.classList.add('quota-row-dragging');
+          try { handle.setPointerCapture(e.pointerId); } catch {}
+        });
+
+        handle.addEventListener('pointermove', (e) => {
+          if (!dragging || dragging.pointerId !== e.pointerId) return;
+          e.preventDefault();
+          const targetRow = rowFromPoint(e.clientX, e.clientY);
+          if (!targetRow || targetRow === currentOver) return;
+          clearDragOver();
+          currentOver = targetRow;
+          currentOver.classList.add('drag-over');
+        });
+
+        handle.addEventListener('pointerup', (e) => {
+          if (!dragging || dragging.pointerId !== e.pointerId) return;
+          e.preventDefault();
+          finishDrag(e.clientX, e.clientY);
+          try { handle.releasePointerCapture(e.pointerId); } catch {}
+        });
+
+        handle.addEventListener('pointercancel', (e) => {
+          if (!dragging || dragging.pointerId !== e.pointerId) return;
+          e.preventDefault();
+          dragging.row?.classList.remove('dragging');
+          document.body.classList.remove('quota-row-dragging');
+          clearDragOver();
+          dragging = null;
+          currentOver = null;
+        });
+      });
+    }
+
+    function bindDynamicInputs() {
+      bindQuotaDrag();
+      document.querySelectorAll('[data-path]').forEach(el => {
+        el.addEventListener('input', (e) => {
+          pushUndoState();
+          const value = e.target.type === 'checkbox' ? e.target.checked : (e.target.dataset.number !== undefined ? n(e.target.value) : e.target.value);
+          setByPath(e.target.dataset.path, value);
+          render(true);
+        }, { once: true });
+      });
+
+      document.querySelectorAll('[data-remove]').forEach(el => {
+        el.addEventListener('click', (e) => removeByPath(e.target.dataset.remove), { once: true });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+
+    function isStandardFactoryItem(name) {
+      const text = String(name || '').toLowerCase().replace(/ё/g, 'е').replace(/[\s\-–—_]+/g, '');
+      return text.includes('68') || text.includes('120') || text.includes('150') || text.includes('alligator');
+    }
+
+    function normalizeNameKey(name) {
+      return String(name || '').toLowerCase().replace(/ё/g, 'е').replace(/[\s\-–—_]+/g, '');
+    }
+
+    function isFactoryProductionQuotaRow(row) {
+      const comment = normalizeNameKey(row?.comment || '');
+      if (comment.includes('сдатьотдельно')) return false;
+      return comment.includes('стандартнаяфабрика') || comment.includes('factory') || isStandardFactoryItem(row?.name);
+    }
+
+    function routeFromRecipe(recipe = {}) {
+      const labels = { bmats: 'Bmats', emats: 'Emats', hemats: 'HEmats', rmats: 'Rmats' };
+      const parts = materialKeys.filter(k => n(recipe[k]) > 0).map(k => labels[k] || state.names[k]);
+      return parts.join(' + ');
+    }
+
+    function defaultFactorySplit(crates, batchCrates) {
+      let left = Math.max(0, Math.round(n(crates)));
+      const batch = Math.max(1, Math.round(n(batchCrates) || 1));
+      if (left <= 0) return '';
+      if (left <= batch) return `${left} одним заказом`;
+      const parts = [];
+      while (left > 0) {
+        const part = Math.min(batch, left);
+        parts.push(String(part));
+        left -= part;
+      }
+      return parts.join(' + ');
+    }
+
+    function isOnlyOneSplit(split) {
+      const text = String(split || '').replace(/\s+/g, '');
+      return /^1(\+1)+$/.test(text);
+    }
+
+    function factoryPresetForName(name, crates = 1) {
+      const text = normalizeNameKey(name);
+      let batchCrates = 4;
+      let batchMinutes = 0;
+      if (text.includes('68')) batchMinutes = 10;
+      else if (text.includes('120')) batchMinutes = 2.75;
+      else if (text.includes('alligator')) batchMinutes = 6.67;
+      else if (text.includes('150')) {
+        batchCrates = 1;
+        batchMinutes = 3.07;
+        return { batchCrates, batchMinutes, split: defaultFactorySplit(crates, 4) };
+      }
+      return { batchCrates, batchMinutes, split: defaultFactorySplit(crates, batchCrates) };
+    }
+
+    function syncFactoryPlanFromQuota() {
+      if (!state.autoSyncFactoryPlan) return;
+      const existingByName = new Map((state.factory || []).map(row => [normalizeNameKey(row.name), row]));
+      const nextFactory = [];
+      for (const quotaRow of state.quota || []) {
+        if (!isFactoryProductionQuotaRow(quotaRow)) continue;
+        if (n(quotaRow.crates) <= 0) continue;
+        const key = normalizeNameKey(quotaRow.name);
+        const existing = existingByName.get(key) || {};
+        const preset = factoryPresetForName(quotaRow.name, quotaRow.crates);
+        const batchCrates = n(existing.batchCrates) > 0 ? existing.batchCrates : preset.batchCrates;
+        nextFactory.push({
+          ...existing,
+          name: quotaRow.name,
+          crates: n(quotaRow.crates),
+          done: n(existing.done),
+          split: String(existing.split || '').trim() && !isOnlyOneSplit(existing.split) ? existing.split : preset.split,
+          batchCrates,
+          batchMinutes: n(existing.batchMinutes) > 0 ? existing.batchMinutes : preset.batchMinutes,
+          route: routeFromRecipe(quotaRow.recipe || {}),
+        });
+      }
+      state.factory = nextFactory;
+    }
+
+    function recipePresetForName(name) {
+      const text = String(name || '').toLowerCase().replace(/ё/g, 'е').replace(/[\s\-–—_]+/g, '');
+      if (text.includes('68')) return { bmats: 120, emats: 240, hemats: 0, rmats: 0 };
+      if (text.includes('120')) return { bmats: 120, emats: 0, hemats: 10, rmats: 0 };
+      if (text.includes('150')) return { bmats: 100, emats: 0, hemats: 50, rmats: 0 };
+      if (text.includes('alligator')) return { bmats: 100, emats: 80, hemats: 0, rmats: 0 };
+      if (text.includes('hemat') || text.includes('heavyexplosive') || text.includes('хемат')) return { bmats: 0, emats: 0, hemats: 30, rmats: 0 };
+      if (text.includes('rmat') || text.includes('refinedmaterial') || text.includes('рмат')) return { bmats: 0, emats: 0, hemats: 0, rmats: 20 };
+      return null;
+    }
+
+    function applyRecipePresets() {
+      pushUndoState();
+      for (const row of state.quota) {
+        const preset = recipePresetForName(row.name);
+        if (!preset) continue;
+        row.recipe = { ...preset };
+        if (isStandardFactoryItem(row.name)) row.comment = 'Стандартная фабрика';
+      }
+      state.useQuotaRecipes = true;
+      state.autoSyncRefineryPlan = true;
+      state.autoSyncFactoryPlan = true;
+      syncRefineryPlanFromQuota(false);
+      render();
+    }
+
+    function updateRefineryPlanFromQuota() {
+      applyKnownRefineryRates(state);
+      const c = calc();
+      for (const row of state.refinery) {
+        const ratio = Math.max(n(row.ratio), 1);
+        const planInput = n(c.effectiveMaterialsNeeded[row.material]) * ratio;
+        row.input = planInput;
+        if (n(row.deposited) > n(row.input)) row.deposited = n(row.input);
+      }
+      const next = calc();
+      for (const k of rawKeys) state.reserveRaw[k] = n(next.exactRawNeed[k]);
+    }
+
+    function syncRefineryPlanFromQuota(shouldRender = true) {
+      if (shouldRender) pushUndoState();
+      updateRefineryPlanFromQuota();
+      if (shouldRender) render();
+    }
+
+    function autoDepositPlanned() {
+      pushUndoState();
+      const c = calc();
+      const available = { ...c.rawOnHand };
+      const orderedRows = state.refinery
+        .map((row, index) => ({ row, index }))
+        .sort((a, b) => refineryTotalMinutes(b.row) - refineryTotalMinutes(a.row));
+
+      for (const item of orderedRows) {
+        const row = item.row;
+        const raw = row.raw;
+        const leftToPlan = Math.max(0, n(row.input) - n(row.deposited));
+        const canAdd = Math.max(0, available[raw] || 0);
+        const add = Math.min(leftToPlan, canAdd);
+        if (add <= 0) continue;
+        row.deposited = n(row.deposited) + add;
+        available[raw] -= add;
+      }
+      render();
+    }
+
+    function clearDeposited() {
+      if (!confirm('Обнулить все значения в колонке «Уже внесено»?')) return;
+      pushUndoState();
+      for (const row of state.refinery) row.deposited = 0;
+      render();
+    }
+
+    async function copyReport() {
+      const text = reportCache || '';
+      await navigator.clipboard.writeText(text);
+      alert('Отчёт скопирован');
+    }
+
+    $('addQuotaBtn').addEventListener('click', () => {
+      pushUndoState();
+      state.quota.push({ name: 'Новый предмет', crates: 1, done: 0, recipe: { bmats: 0, emats: 0, hemats: 0, rmats: 0 }, comment: '' });
+      render();
+    });
+
+    $('addInventoryBtn').addEventListener('click', () => {
+      pushUndoState();
+      state.inventory.push({ raw: 'scrap', amount: 0, note: '' });
+      render();
+    });
+
+    function addQuickInventory(raw) {
+      pushUndoState();
+      state.inventory.push({ raw, amount: 1500, note: 'рейс' });
+      render();
+    }
+
+    $('addScrapBtn').addEventListener('click', () => addQuickInventory('scrap'));
+    $('addSulfurBtn').addEventListener('click', () => addQuickInventory('sulfur'));
+    $('addComponentsBtn').addEventListener('click', () => addQuickInventory('components'));
+
+    $('addFactoryBtn').addEventListener('click', () => {
+      if (state.autoSyncFactoryPlan) return;
+      pushUndoState();
+      state.factory.push({ name: 'Новый заказ', crates: 1, done: 0, split: '', batchCrates: 1, batchMinutes: 0, route: '' });
+      render();
+    });
+
+    $('applyRecipePresetsBtn').addEventListener('click', applyRecipePresets);
+    $('syncRefineryPlanBtn').addEventListener('click', () => syncRefineryPlanFromQuota(true));
+    $('autoDepositBtn').addEventListener('click', autoDepositPlanned);
+    $('clearDepositedBtn').addEventListener('click', clearDeposited);
+
+    $('undoBtn').addEventListener('click', undoAction);
+    $('redoBtn').addEventListener('click', redoAction);
+    $('saveBtn').addEventListener('click', manualSave);
+    $('saveAsBtn').addEventListener('click', saveAsFile);
+
+    $('copyReportBtn').addEventListener('click', copyReport);
+
+    $('resetBtn').addEventListener('click', () => {
+      if (!confirm('Сбросить все значения к плану по умолчанию?')) return;
+      pushUndoState();
+      state = normalizeState(structuredClone(defaultState));
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+    });
+
+    $('exportBtn').addEventListener('click', () => {
+      saveState(false);
+      downloadJson(`foxhole-logistics-quota-${stampForFileName(new Date())}.json`, buildExportState());
+      showSaveStatus('Экспорт готов');
+    });
+
+    $('importBtn').addEventListener('click', () => $('importFile').click());
+
+    $('importFile').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        pushUndoState();
+        state = normalizeState(mergeDeep(structuredClone(defaultState), JSON.parse(text)));
+        render();
+      } catch {
+        alert('Не получилось импортировать JSON');
+      } finally {
+        e.target.value = '';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const key = String(e.key || '').toLowerCase();
+      const code = String(e.code || '');
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+
+      // e.key зависит от раскладки клавиатуры: в RU Ctrl+Z приходит как Ctrl+Я.
+      // e.code привязан к физической клавише, поэтому горячие клавиши работают и на EN, и на RU.
+      const isUndoKey = code === 'KeyZ' || key === 'z' || key === 'я';
+      const isRedoKey = code === 'KeyY' || key === 'y' || key === 'н';
+      const isSaveKey = code === 'KeyS' || key === 's' || key === 'ы';
+
+      if (isUndoKey && !e.shiftKey) {
+        e.preventDefault();
+        undoAction();
+      } else if (isRedoKey || (isUndoKey && e.shiftKey)) {
+        e.preventDefault();
+        redoAction();
+      } else if (isSaveKey) {
+        e.preventDefault();
+        manualSave();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
