@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Foxhole — калькулятор логистической квоты v28</title>
+  <title>Foxhole — калькулятор логистической квоты v29</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -671,6 +671,73 @@
     body.quota-row-dragging, body.quota-row-dragging * { cursor: grabbing !important; user-select: none !important; }
 
     .refinery-scroll table { min-width: 1720px; }
+
+    /* v29: на телефонах не сжимаем колонки до нечитаемого состояния.
+       Таблицы получают нормальную минимальную ширину и прокручиваются по горизонтали. */
+    @media (max-width: 980px) {
+      .card {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      body.compact-fit-mode .quota-scroll table,
+      body.compact-fit-mode .factory-scroll table,
+      body.compact-fit-mode .refinery-scroll table {
+        table-layout: auto;
+      }
+
+      .quota-scroll table,
+      body.compact-fit-mode .quota-scroll table { min-width: 1500px; }
+      .factory-scroll table,
+      body.compact-fit-mode .factory-scroll table { min-width: 1560px; }
+      .refinery-scroll table,
+      body.compact-fit-mode .refinery-scroll table { min-width: 1720px; }
+
+      #rawNeedTable { min-width: 760px; }
+      #inventoryTable { min-width: 700px; }
+      #rawBalanceTable { min-width: 620px; }
+      #materialNeedTable { min-width: 1280px; }
+      #quotaMaterialSummaryTable,
+      #quotaRawSummaryTable { min-width: 520px; }
+
+      th,
+      td {
+        white-space: nowrap;
+      }
+
+      .card p,
+      .note,
+      .inline-check,
+      .pill,
+      .meta-info {
+        white-space: normal;
+      }
+
+      input,
+      select {
+        min-width: 96px;
+      }
+
+      #quotaTable input[data-path*=".name"],
+      #factoryTable input[data-path*=".name"],
+      #inventoryTable select {
+        min-width: 150px;
+      }
+
+      #inventoryTable input[data-path*=".note"] {
+        min-width: 150px;
+      }
+
+      .status {
+        min-width: 86px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -688,7 +755,7 @@
         <button id="saveAsBtn" title="Выбрать место сохранения JSON-файла. В Chrome/Edge можно заменить существующий файл">💾 Сохранить как...</button>
         <button class="layout" id="layoutModeBtn" title="Сжимает таблицы: поля и колонки становятся компактнее, чтобы больше данных помещалось на экране">↔ Сжать таблицы</button>
         <span class="save-status" id="saveStatus">—</span>
-        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v28</strong></span>
+        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v29</strong></span>
         <span class="meta-info">Файл квоты: <strong class="file-name" id="quotaFileName">автосохранение браузера</strong></span>
         <span class="meta-info">Изменено: <strong id="modifiedAt">—</strong></span>
         <button class="good" id="copyReportBtn">Скопировать отчёт</button>
@@ -928,9 +995,9 @@
   <input id="importFile" class="hidden" type="file" accept="application/json" />
 
   <script>
-    const PROGRAM_VERSION = 'v28';
-    const STORAGE_KEY = 'foxhole-logistics-quota-v28';
-    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v27', 'foxhole-logistics-quota-v26', 'foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
+    const PROGRAM_VERSION = 'v29';
+    const STORAGE_KEY = 'foxhole-logistics-quota-v29';
+    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v28', 'foxhole-logistics-quota-v27', 'foxhole-logistics-quota-v26', 'foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
 
     const defaultState = {
       useQuotaRecipes: true,
