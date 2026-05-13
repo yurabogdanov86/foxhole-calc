@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Foxhole — калькулятор логистической квоты v26</title>
+  <title>Foxhole — калькулятор логистической квоты v28</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -121,6 +121,7 @@
     button.danger { background: linear-gradient(180deg, #3b1217, #2a0d11); border-color: #7f1d1d; }
     button.good { background: linear-gradient(180deg, #164a2a, #10351f); border-color: #166534; }
     button.ghost { background: transparent; box-shadow: none; }
+    button.layout { background: linear-gradient(180deg, #1e3a5f, #172554); border-color: #1d4ed8; }
 
     .main-toolbar {
       position: fixed;
@@ -221,6 +222,216 @@
         text-align: center;
         padding-top: 2px;
         padding-bottom: 2px;
+      }
+    }
+
+
+    /* Переключаемый широкий режим: рабочая область занимает почти всю ширину окна,
+       а панель кнопок переносится вниз. Удобно на больших мониторах, когда широкие
+       таблицы должны помещаться без лишнего горизонтального скролла. */
+    body.full-width-mode {
+      padding-bottom: 128px;
+    }
+
+    @media (min-width: 1500px) {
+      body.full-width-mode .wrap {
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      body.full-width-mode .main-toolbar {
+        top: auto;
+        left: 16px;
+        right: 16px;
+        bottom: 12px;
+        width: auto;
+        max-width: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      body.full-width-mode .main-toolbar button {
+        flex: 0 1 auto;
+        min-width: 118px;
+      }
+
+      body.full-width-mode .main-toolbar #copyReportBtn {
+        flex-basis: auto;
+      }
+
+      body.full-width-mode .main-toolbar .save-status {
+        flex: 0 0 auto;
+        min-width: 40px;
+      }
+
+      body.full-width-mode .main-toolbar .meta-info {
+        flex: 0 1 auto;
+        max-width: 260px;
+        text-align: left;
+        padding: 0 6px;
+      }
+    }
+
+    body.full-width-mode .card {
+      padding: 14px;
+    }
+
+    body.full-width-mode table {
+      font-size: 13px;
+    }
+
+    body.full-width-mode th,
+    body.full-width-mode td {
+      padding: 6px 7px;
+    }
+
+    body.full-width-mode input,
+    body.full-width-mode select,
+    body.full-width-mode textarea {
+      padding: 7px 8px;
+    }
+
+    body.full-width-mode .quota-scroll table { min-width: 1380px; }
+    body.full-width-mode .factory-scroll table { min-width: 1420px; }
+    body.full-width-mode .refinery-scroll table { min-width: 1580px; }
+
+    /* Компактный режим: не растягивает страницу, а уменьшает поля и ширины колонок,
+       чтобы таблицы лучше помещались на экране без лишнего горизонтального скролла. */
+    body.compact-fit-mode .card { padding: 14px; }
+    body.compact-fit-mode table { font-size: 13px; }
+    body.compact-fit-mode th,
+    body.compact-fit-mode td { padding: 6px 7px; }
+    body.compact-fit-mode input,
+    body.compact-fit-mode select,
+    body.compact-fit-mode textarea {
+      padding: 7px 8px;
+      font-size: 13px;
+      min-width: 0;
+    }
+
+    body.compact-fit-mode .quota-scroll table,
+    body.compact-fit-mode .factory-scroll table,
+    body.compact-fit-mode .refinery-scroll table {
+      table-layout: fixed;
+    }
+
+    body.compact-fit-mode .quota-scroll table { min-width: 1120px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(1),
+    body.compact-fit-mode .quota-scroll td:nth-child(1) { width: 38px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(2),
+    body.compact-fit-mode .quota-scroll td:nth-child(2) { width: 150px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(3),
+    body.compact-fit-mode .quota-scroll td:nth-child(3) { width: 92px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(4),
+    body.compact-fit-mode .quota-scroll td:nth-child(4) { width: 105px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(5),
+    body.compact-fit-mode .quota-scroll td:nth-child(5) { width: 88px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(6),
+    body.compact-fit-mode .quota-scroll td:nth-child(6),
+    body.compact-fit-mode .quota-scroll th:nth-child(7),
+    body.compact-fit-mode .quota-scroll td:nth-child(7),
+    body.compact-fit-mode .quota-scroll th:nth-child(8),
+    body.compact-fit-mode .quota-scroll td:nth-child(8),
+    body.compact-fit-mode .quota-scroll th:nth-child(9),
+    body.compact-fit-mode .quota-scroll td:nth-child(9) { width: 115px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(10),
+    body.compact-fit-mode .quota-scroll td:nth-child(10) { width: 150px; }
+    body.compact-fit-mode .quota-scroll th:nth-child(11),
+    body.compact-fit-mode .quota-scroll td:nth-child(11) { width: 34px; }
+
+    body.compact-fit-mode .factory-scroll table { min-width: 1220px; }
+    body.compact-fit-mode .refinery-scroll table { min-width: 1420px; }
+
+    @media (min-width: 1500px) {
+      body.compact-fit-mode .quota-scroll table { min-width: 0; width: 100%; }
+      body.compact-fit-mode .factory-scroll table { min-width: 0; width: 100%; }
+      body.compact-fit-mode .refinery-scroll table { min-width: 0; width: 100%; }
+    }
+
+    /* На телефонах панель действий больше не плавает поверх половины экрана.
+       Она становится обычным верхним блоком внутри шапки. */
+    @media (max-width: 980px) {
+      body { padding-bottom: 0; }
+
+      .wrap {
+        width: auto;
+        max-width: none;
+        padding: 8px 10px 18px;
+      }
+
+      header {
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      h1 {
+        font-size: clamp(23px, 8vw, 34px);
+        line-height: 1.08;
+      }
+
+      .main-toolbar {
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        top: auto;
+        width: 100%;
+        max-width: none;
+        padding: 8px;
+        margin-top: 6px;
+        justify-content: center;
+        align-items: stretch;
+      }
+
+      .main-toolbar button {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+        padding: 8px 9px;
+      }
+
+      .main-toolbar #layoutModeBtn,
+      .main-toolbar #copyReportBtn,
+      .main-toolbar #resetBtn {
+        flex-basis: 100%;
+      }
+
+      .main-toolbar .save-status,
+      .main-toolbar .meta-info {
+        flex: 1 1 100%;
+        text-align: center;
+        padding: 0;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .main-toolbar {
+        border-radius: 14px;
+      }
+
+      .main-toolbar .version-line,
+      .main-toolbar .save-status {
+        display: none;
+      }
+
+      .main-toolbar .meta-info {
+        font-size: 11px;
+      }
+
+      .main-toolbar button {
+        font-size: 13px;
+        padding: 8px 7px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      body.full-width-mode .wrap {
+        width: auto;
+        max-width: none;
+        padding-left: 10px;
+        padding-right: 10px;
       }
     }
 
@@ -475,8 +686,9 @@
         <button id="redoBtn" title="Вернуть отменённое действие, Ctrl+Y">↷ Вернуть</button>
         <button class="good" id="saveBtn" title="Сохранить в браузере, Ctrl+S">💾 Сохранить</button>
         <button id="saveAsBtn" title="Выбрать место сохранения JSON-файла. В Chrome/Edge можно заменить существующий файл">💾 Сохранить как...</button>
+        <button class="layout" id="layoutModeBtn" title="Сжимает таблицы: поля и колонки становятся компактнее, чтобы больше данных помещалось на экране">↔ Сжать таблицы</button>
         <span class="save-status" id="saveStatus">—</span>
-        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v26</strong></span>
+        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v28</strong></span>
         <span class="meta-info">Файл квоты: <strong class="file-name" id="quotaFileName">автосохранение браузера</strong></span>
         <span class="meta-info">Изменено: <strong id="modifiedAt">—</strong></span>
         <button class="good" id="copyReportBtn">Скопировать отчёт</button>
@@ -716,14 +928,18 @@
   <input id="importFile" class="hidden" type="file" accept="application/json" />
 
   <script>
-    const PROGRAM_VERSION = 'v26';
-    const STORAGE_KEY = 'foxhole-logistics-quota-v26';
-    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
+    const PROGRAM_VERSION = 'v28';
+    const STORAGE_KEY = 'foxhole-logistics-quota-v28';
+    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v27', 'foxhole-logistics-quota-v26', 'foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
 
     const defaultState = {
       useQuotaRecipes: true,
       autoSyncRefineryPlan: true,
       autoSyncFactoryPlan: true,
+      ui: {
+        fullWidthMode: false,
+        compactFitMode: true,
+      },
       meta: {
         updatedAt: '',
         savedAsName: '',
@@ -867,6 +1083,10 @@
       ensureMeta(normalized);
       if (typeof normalized.autoSyncRefineryPlan !== 'boolean') normalized.autoSyncRefineryPlan = true;
       if (typeof normalized.autoSyncFactoryPlan !== 'boolean') normalized.autoSyncFactoryPlan = true;
+      if (!normalized.ui || typeof normalized.ui !== 'object') normalized.ui = {};
+      // Старый режим "на всю ширину" из v27 больше не используем: он мешал на телефонах и широких таблицах.
+      normalized.ui.fullWidthMode = false;
+      if (typeof normalized.ui.compactFitMode !== 'boolean') normalized.ui.compactFitMode = true;
       applyKnownRefineryRates(normalized);
       orderRefineryRows(normalized);
       for (const row of normalized.refinery || []) {
@@ -929,6 +1149,29 @@
 
     function updateModifiedDisplay() {
       updateMetaDisplay();
+    }
+
+    function updateLayoutModeDisplay() {
+      if (!state.ui || typeof state.ui !== 'object') state.ui = {};
+      const compact = !!state.ui.compactFitMode;
+      // Старый широкий режим больше не используется как основной переключатель.
+      document.body.classList.remove('full-width-mode');
+      document.body.classList.toggle('compact-fit-mode', compact);
+      const btn = $('layoutModeBtn');
+      if (btn) {
+        btn.textContent = compact ? '↔ Обычные таблицы' : '↔ Сжать таблицы';
+        btn.title = compact
+          ? 'Выключить компактный режим: вернуть обычные размеры полей и колонок.'
+          : 'Включить компактный режим: уменьшить поля и колонки, чтобы больше данных помещалось на экране.';
+      }
+    }
+
+    function toggleLayoutMode() {
+      if (!state.ui || typeof state.ui !== 'object') state.ui = {};
+      state.ui.compactFitMode = !state.ui.compactFitMode;
+      updateLayoutModeDisplay();
+      saveState(false);
+      showSaveStatus(state.ui.compactFitMode ? 'Таблицы сжаты' : 'Обычные таблицы');
     }
 
     function saveState(showStatus = false) {
@@ -1659,6 +1902,7 @@ ${factoryLines}
       renderSummary(c);
       renderReport(c);
       bindDynamicInputs();
+      updateLayoutModeDisplay();
       saveState();
       updateModifiedDisplay();
       updateHistoryButtons();
@@ -1990,6 +2234,7 @@ ${factoryLines}
     $('redoBtn').addEventListener('click', redoAction);
     $('saveBtn').addEventListener('click', manualSave);
     $('saveAsBtn').addEventListener('click', saveAsFile);
+    $('layoutModeBtn').addEventListener('click', toggleLayoutMode);
 
     $('copyReportBtn').addEventListener('click', copyReport);
 
