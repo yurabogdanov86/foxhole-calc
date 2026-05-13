@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Foxhole — калькулятор логистической квоты v28</title>
+  <title>Foxhole — калькулятор логистической квоты v30</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -318,6 +318,21 @@
       table-layout: fixed;
     }
 
+    body.compact-fit-mode .raw-need-scroll table {
+      table-layout: fixed;
+      min-width: 700px;
+    }
+    body.compact-fit-mode .raw-need-scroll th:nth-child(1),
+    body.compact-fit-mode .raw-need-scroll td:nth-child(1) { width: 155px; }
+    body.compact-fit-mode .raw-need-scroll th:nth-child(2),
+    body.compact-fit-mode .raw-need-scroll td:nth-child(2) { width: 130px; }
+    body.compact-fit-mode .raw-need-scroll th:nth-child(3),
+    body.compact-fit-mode .raw-need-scroll td:nth-child(3) { width: 150px; }
+    body.compact-fit-mode .raw-need-scroll th:nth-child(4),
+    body.compact-fit-mode .raw-need-scroll td:nth-child(4) { width: 110px; }
+    body.compact-fit-mode .raw-need-scroll th:nth-child(5),
+    body.compact-fit-mode .raw-need-scroll td:nth-child(5) { width: 155px; }
+
     body.compact-fit-mode .quota-scroll table { min-width: 1120px; }
     body.compact-fit-mode .quota-scroll th:nth-child(1),
     body.compact-fit-mode .quota-scroll td:nth-child(1) { width: 38px; }
@@ -605,6 +620,17 @@
     .subtle { color: #cbd5e1; }
     .table-scroll { overflow-x: auto; }
     .table-scroll table { min-width: 760px; }
+    .raw-need-scroll table { min-width: 700px; }
+    .raw-need-scroll th:nth-child(1),
+    .raw-need-scroll td:nth-child(1) { min-width: 150px; }
+    .raw-need-scroll th:nth-child(2),
+    .raw-need-scroll td:nth-child(2) { min-width: 130px; }
+    .raw-need-scroll th:nth-child(3),
+    .raw-need-scroll td:nth-child(3) { min-width: 150px; }
+    .raw-need-scroll th:nth-child(4),
+    .raw-need-scroll td:nth-child(4) { min-width: 110px; }
+    .raw-need-scroll th:nth-child(5),
+    .raw-need-scroll td:nth-child(5) { min-width: 130px; }
     .compact td, .compact th { padding: 6px 8px; }
     .chipline {
       display: flex;
@@ -688,7 +714,7 @@
         <button id="saveAsBtn" title="Выбрать место сохранения JSON-файла. В Chrome/Edge можно заменить существующий файл">💾 Сохранить как...</button>
         <button class="layout" id="layoutModeBtn" title="Сжимает таблицы: поля и колонки становятся компактнее, чтобы больше данных помещалось на экране">↔ Сжать таблицы</button>
         <span class="save-status" id="saveStatus">—</span>
-        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v28</strong></span>
+        <span class="meta-info version-line">Версия программы: <strong id="programVersion">v30</strong></span>
         <span class="meta-info">Файл квоты: <strong class="file-name" id="quotaFileName">автосохранение браузера</strong></span>
         <span class="meta-info">Изменено: <strong id="modifiedAt">—</strong></span>
         <button class="good" id="copyReportBtn">Скопировать отчёт</button>
@@ -768,18 +794,20 @@
       <section class="card span-6">
         <h2>2. Что нужно накопать / цель добычи</h2>
         <p class="muted small">Если точный минимум по новой квоте пока неизвестен — просто заполни колонку «План / цель». Расчётный минимум считается справочно из раздела 5.</p>
-        <table id="rawNeedTable">
-          <thead>
-            <tr>
-              <th>Сырьё</th>
-              <th class="right">Расчётный минимум</th>
-              <th class="right">План / цель</th>
-              <th class="right">Накопано</th>
-              <th class="right">Осталось до цели</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-scroll raw-need-scroll">
+          <table id="rawNeedTable">
+            <thead>
+              <tr>
+                <th>Сырьё</th>
+                <th class="right">Расчётный минимум</th>
+                <th class="right">План / цель</th>
+                <th class="right">Накопано</th>
+                <th class="right">Осталось до цели</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="card span-6">
@@ -928,9 +956,9 @@
   <input id="importFile" class="hidden" type="file" accept="application/json" />
 
   <script>
-    const PROGRAM_VERSION = 'v28';
-    const STORAGE_KEY = 'foxhole-logistics-quota-v28';
-    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v27', 'foxhole-logistics-quota-v26', 'foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
+    const PROGRAM_VERSION = 'v30';
+    const STORAGE_KEY = 'foxhole-logistics-quota-v30';
+    const STORAGE_FALLBACK_KEYS = ['foxhole-logistics-quota-v28', 'foxhole-logistics-quota-v27', 'foxhole-logistics-quota-v26', 'foxhole-logistics-quota-v25', 'foxhole-logistics-quota-v24', 'foxhole-logistics-quota-v23', 'foxhole-logistics-quota-v22', 'foxhole-logistics-quota-v21', 'foxhole-logistics-quota-v20', 'foxhole-logistics-quota-v19', 'foxhole-logistics-quota-v18', 'foxhole-logistics-quota-v17', 'foxhole-logistics-quota-v16', 'foxhole-logistics-quota-v15', 'foxhole-logistics-quota-v14', 'foxhole-logistics-quota-v13', 'foxhole-logistics-quota-v12', 'foxhole-logistics-quota-v11', 'foxhole-logistics-quota-v10', 'foxhole-logistics-quota-v9', 'foxhole-logistics-quota-v8', 'foxhole-logistics-quota-v7', 'foxhole-logistics-quota-v6', 'foxhole-logistics-quota-v5'];
 
     const defaultState = {
       useQuotaRecipes: true,
